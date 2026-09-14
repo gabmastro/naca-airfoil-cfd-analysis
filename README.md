@@ -1,285 +1,332 @@
-# NACA 2412 CFD Aerodynamic Analysis
+# NACA 2412 CFD Aerodynamic Study
 
-**2D CFD analysis of a NACA 2412 airfoil using ANSYS Fluent**
+## Overview
 
-This project presents a two-dimensional Computational Fluid Dynamics (CFD)
-analysis of a NACA 2412 airfoil performed using ANSYS Fluent.
+This project presents a two-dimensional CFD analysis of a **NACA 2412 airfoil** using **ANSYS Fluent**.
 
-The project was developed as an independent study to gain practical experience
-with the complete CFD workflow and to connect theoretical concepts from fluid
-dynamics and aerodynamics with numerical simulation.
+The objective was to study the aerodynamic behaviour of a cambered airfoil over a range of angles of attack, from attached-flow conditions to stall.
 
-The analysis includes geometry preparation, mesh generation, near-wall
-refinement, solver setup, convergence monitoring, aerodynamic force evaluation
-and flow-field post-processing.
+The project includes:
 
----
+- NACA 2412 geometry generation using Python
+- 2D computational domain and mesh generation
+- boundary-layer inflation
+- mesh refinement study
+- steady RANS simulations using the k-ω SST turbulence model
+- angle-of-attack sweep from 0° to 18°
+- lift and drag analysis
+- drag polar and aerodynamic efficiency
+- comparison with thin-airfoil theory
+- visualization of flow separation and stall using velocity pathlines
 
-## Project Objectives
+The simulations were performed at:
 
-The main objectives of the project were to:
+- Freestream velocity: **30 m/s**
+- Chord: **1 m**
+- Air density: **1.225 kg/m³**
+- Dynamic viscosity: **1.79 × 10⁻⁵ Pa·s**
 
-- Set up a complete external-aerodynamics CFD simulation in ANSYS Fluent
-- Generate an appropriate computational mesh around an airfoil
-- Apply local mesh refinement and inflation layers near the airfoil surface
-- Define suitable boundary conditions and numerical models
-- Monitor numerical convergence
-- Calculate lift and drag coefficients
-- Analyse pressure and velocity fields
-- Visualise the flow using contours and pathlines
-- Develop a better understanding of the relationship between flow structures
-  and aerodynamic performance
+giving a chord-based Reynolds number of approximately:
 
----
-
-## Software
-
-The project was developed using:
-
-- **ANSYS Workbench**
-- **ANSYS Meshing**
-- **ANSYS Fluent**
-
-The results were subsequently analysed through Fluent post-processing and
-aerodynamic coefficient monitoring.
+**Re = 2.05 × 10⁶**
 
 ---
 
-## CFD Workflow
+## Geometry
 
-The general workflow followed throughout the project was:
+The NACA 2412 profile was generated using a Python script from the standard NACA 4-digit analytical definition.
 
-**Airfoil Geometry → Computational Domain → Mesh → Boundary Conditions →  
-Physical Models → Solver Setup → Convergence → Aerodynamic Coefficients →  
-Flow-Field Analysis**
+For a NACA 2412 airfoil:
 
-Each stage was progressively refined while checking the physical consistency
-of the simulation.
+- Maximum camber: **2% of chord**
+- Maximum camber position: **40% of chord**
+- Maximum thickness: **12% of chord**
 
----
+The generated coordinates were exported and imported into ANSYS for the CFD analysis.
 
-# 1. Airfoil Geometry
+The chord was kept equal to:
 
-The main configuration analysed in this project is the **NACA 2412** airfoil.
+**c = 1 m**
 
-The NACA 2412 is a cambered four-digit NACA profile. Unlike a symmetric
-airfoil, its camber allows it to generate lift even at zero geometric angle
-of attack.
+The angle of attack was imposed by changing the freestream velocity components rather than rotating the airfoil geometry.
 
-A two-dimensional representation of the airfoil was placed inside an external
-fluid domain sufficiently large to model the surrounding airflow while
-reducing the influence of the far-field boundaries on the solution.
+For each angle:
 
----
+`Ux = U∞ cos(α)`
 
-# 2. Computational Mesh
+`Uy = U∞ sin(α)`
 
-Mesh generation was one of the main parts of the CFD setup.
-
-The objective was to obtain sufficient resolution in the regions characterised
-by the largest aerodynamic gradients without unnecessarily increasing the
-overall computational cost.
-
-Local refinement was applied around the airfoil, with particular attention to:
-
-- Leading edge
-- Trailing edge
-- Airfoil surface
-- Near-wall region
-- Wake region
-
-### Edge Sizing
-
-Local edge sizing was used to increase the spatial resolution around the
-airfoil geometry.
-
-A finer discretisation is particularly important near the leading edge,
-where the flow undergoes rapid acceleration and large pressure gradients.
-
-### Inflation Layers
-
-Inflation layers were generated along the airfoil surface to improve the
-resolution of the near-wall flow.
-
-This allows the mesh to better represent the strong velocity gradients
-associated with the boundary layer.
-
-The inflation setup was adjusted during the project to obtain a mesh suitable
-for the final simulations.
-
-> Detailed mesh settings and parameters are documented in the technical report.
+This allowed the same geometry and mesh to be used throughout the angle-of-attack sweep.
 
 ---
 
-# 3. Boundary Conditions and Solver Setup
+## Computational Domain
+
+A two-dimensional external-flow domain was created around the airfoil.
+
+Domain dimensions:
+
+- Upstream boundary: **5c**
+- Downstream boundary: **11c**
+- Upper boundary: **2.5c**
+- Lower boundary: **2.5c**
+
+The airfoil was subtracted from the fluid domain to obtain a single 2D fluid region.
+
+Boundary conditions were adapted to the direction of the freestream during the angle-of-attack sweep.
+
+---
+
+## Mesh
+
+The final refined mesh used:
+
+- Global element size: **0.15 m**
+- Airfoil edge sizing: **0.005 m**
+
+Boundary-layer inflation was applied directly to the airfoil surface.
+
+### Inflation settings
+
+| Parameter | Value |
+|---|---:|
+| First layer height | 2.4 × 10⁻⁵ m |
+| Maximum layers | 30 |
+| Growth rate | 1.18 |
+| Inflation algorithm | Pre |
+
+The small first-layer height was selected to obtain adequate near-wall resolution for the k-ω SST turbulence model.
+
+A coarser mesh was also investigated before adopting the refined configuration in order to assess the sensitivity of the aerodynamic coefficients to mesh refinement.
+
+---
+
+## CFD Setup
 
 The simulations were performed using **ANSYS Fluent**.
 
-A pressure-based numerical solution procedure was used for the aerodynamic
-analysis.
+### Solver
 
-The external flow conditions were imposed through the boundaries of the
-computational domain, while the airfoil surface was treated as a wall.
+- 2D
+- Steady
+- Pressure-based solver
+- Double precision
+- SIMPLE pressure-velocity coupling
 
-During the simulations, both residuals and aerodynamic force coefficients
-were monitored.
+### Turbulence model
 
-Convergence was not assessed solely from the residual history: the stability
-of the lift and drag coefficients was also considered when evaluating whether
-the solution had reached a sufficiently stable state.
+**k-ω SST**
 
----
+The SST model was selected because of its ability to provide good near-wall treatment while also being suitable for aerodynamic flows involving adverse pressure gradients and flow separation.
 
-# 4. Baseline Check — NACA 0012
+### Freestream conditions
 
-Before the final NACA 2412 analysis, a **NACA 0012** symmetric airfoil was
-used as a baseline case.
-
-At zero angle of attack, a symmetric NACA 0012 airfoil is expected to produce
-approximately zero lift.
-
-This provided a useful physical sanity check for the CFD setup before moving
-to the cambered NACA 2412 geometry.
-
-The NACA 0012 case is therefore treated as a preliminary validation of the
-workflow rather than as the main result of the project.
-
----
-
-# 5. NACA 2412 Analysis
-
-The final analysis was performed using the **NACA 2412** airfoil.
-
-Because of its asymmetric geometry and positive camber, the NACA 2412 produces
-a non-zero lift coefficient even at zero geometric angle of attack.
-
-After convergence, the final simulation produced:
-
-| Parameter | Result |
+| Parameter | Value |
 |---|---:|
-| Airfoil | NACA 2412 |
-| Angle of attack | 0° |
-| Lift coefficient, CL | **0.2174** |
-| Drag coefficient, CD | **0.0100** |
+| Velocity | 30 m/s |
+| Density | 1.225 kg/m³ |
+| Dynamic viscosity | 1.79 × 10⁻⁵ Pa·s |
+| Turbulence intensity | 1% |
+| Turbulent viscosity ratio | 10 |
+| Reynolds number | ≈ 2.05 × 10⁶ |
 
-These values represent the final converged NACA 2412 case obtained during
-the project.
+Second-order spatial discretization was used for the final converged solutions.
 
-The positive lift coefficient at zero geometric angle of attack is consistent
-with the expected aerodynamic behaviour of a cambered airfoil.
-
----
-
-# 6. Convergence
-
-Numerical convergence was monitored throughout the simulations.
-
-Two complementary indicators were considered:
-
-### Residuals
-
-The evolution of the governing-equation residuals was monitored during the
-iterative solution process.
-
-### Aerodynamic Coefficients
-
-Lift and drag coefficients were monitored simultaneously.
-
-A solution was considered meaningful only when the aerodynamic coefficients
-reached sufficiently stable values in addition to the reduction of the
-residuals.
-
-This was particularly useful for avoiding the assumption that a simulation
-was converged based only on the iteration count.
+Convergence was assessed using both residual behaviour and stabilization of the aerodynamic force coefficients.
 
 ---
 
-# 7. Flow-Field Post-Processing
+## Angle-of-Attack Sweep
 
-The converged solution was analysed using several flow visualisations.
+The NACA 2412 was simulated at:
 
-The post-processing included:
+**α = 0°, 4°, 8°, 12°, 14°, 16°, 17°, 18°**
 
-- Pathlines
+The converged lift and drag coefficients were:
 
-These visualisations were used together with the numerical values of CL and CD
-to interpret the aerodynamic behaviour of the profile.
-
-
-
-## Pathlines
-
-Pathlines were used to visualise the direction and evolution of the flow around
-the airfoil.
-
-They provide a useful qualitative representation of how the external flow
-interacts with the geometry and how the wake develops downstream.
+| α [deg] | Cl | Cd | Cl/Cd |
+|---:|---:|---:|---:|
+| 0 | 0.2174 | 0.0100 | 21.74 |
+| 4 | 0.6176 | 0.0125 | 49.41 |
+| 8 | 1.0246 | 0.0196 | 52.28 |
+| 12 | 1.3415 | 0.0334 | 40.16 |
+| 14 | 1.4651 | 0.0441 | 33.22 |
+| 16 | 1.5241 | 0.0605 | 25.19 |
+| 17 | 1.4888 | 0.0748 | 19.90 |
+| 18 | 1.4175 | 0.0961 | 14.75 |
 
 ---
 
-# 8. Results Summary
+## Lift Curve
 
-The project progressed from a symmetric baseline configuration to a final
-cambered-airfoil simulation.
+At low and moderate angles of attack, the lift coefficient increases approximately linearly with α.
 
-| Configuration | Purpose | Main Observation |
-|---|---|---|
-| NACA 0012 at 0° | Baseline / sanity check | Lift approximately zero, as expected for a symmetric airfoil |
-| NACA 2412 at 0° | Final CFD case | Positive lift generated by airfoil camber |
-| NACA 2412 at 0° | Quantitative result | CL = 0.2174, CD = 0.0100 |
+Using the CFD results between 0° and 8°:
 
-The comparison helped connect the numerical results with the fundamental
-aerodynamic differences between symmetric and cambered airfoils.
+`dCl/dα ≈ 0.101 /deg`
 
----
+At higher incidence, the slope progressively decreases.
 
-# 9. What I Learned
+The maximum lift coefficient observed in the simulated points was:
 
-The project provided practical experience with the main stages of a CFD
-aerodynamic analysis.
+**Cl,max ≈ 1.52 at α = 16°**
 
-In particular, I developed experience with:
+Beyond this point, the lift coefficient decreases while drag continues to increase.
 
-- External aerodynamic CFD setup
-- ANSYS Workbench workflow
-- ANSYS Meshing
-- ANSYS Fluent
-- Computational domain definition
-- Local mesh refinement
-- Edge sizing
-- Inflation layers
-- Boundary-condition definition
-- Numerical solver setup
-- Residual monitoring
-- Lift and drag coefficient monitoring
-- CFD convergence assessment
-- Pressure and velocity field interpretation
-- Pathline visualisation
-- Aerodynamic interpretation of numerical results
-
-Most importantly, the project helped me understand that obtaining a CFD result
-is only one part of the analysis: mesh quality, convergence and physical
-interpretation must also be considered before accepting the numerical output.
+This behaviour indicates the onset of stall between approximately **16° and 18°** for the present CFD setup.
 
 ---
 
-# 10. Limitations and Future Development
+## Aerodynamic Efficiency
 
-This project represents an introductory CFD aerodynamic study rather than a
-fully validated research-level analysis.
+Aerodynamic efficiency was evaluated using:
 
-Further development could include:
+`Cl/Cd`
 
-- Formal mesh-independence study
-- Detailed near-wall resolution and y+ assessment
-- Comparison with experimental wind-tunnel data
-- Investigation of additional operating conditions
-- Systematic angle-of-attack sweep
-- Comparison between turbulence models
-- Automated extraction and analysis of CFD results using Python
-- Generation of complete CL-α and CD-α aerodynamic curves
+The highest value among the simulated points was obtained at:
 
-These steps would provide a more rigorous assessment of the numerical accuracy
-and extend the project into a more complete aerodynamic study.
+**α = 8°**
+
+with:
+
+**Cl/Cd ≈ 52.3**
+
+At larger angles of attack, drag increases significantly and the aerodynamic efficiency decreases.
 
 ---
+
+## Thin-Airfoil Theory Comparison
+
+The zero-angle CFD result was compared with thin-airfoil theory.
+
+For the NACA 2412 camber line, thin-airfoil theory gives an estimated zero-lift angle of approximately:
+
+**αL=0 ≈ -2.08°**
+
+Using:
+
+`Cl = 2π(α - αL=0)`
+
+the theoretical lift coefficient at α = 0° is approximately:
+
+**Cl,theory ≈ 0.228**
+
+The CFD result was:
+
+**Cl,CFD = 0.2174**
+
+corresponding to a difference of approximately **4.6%**.
+
+The agreement provides a useful sanity check for the CFD setup while accounting for the different assumptions of viscous RANS CFD and inviscid thin-airfoil theory.
+
+---
+
+## Flow Separation and Stall
+
+Velocity pathlines were compared at several representative angles of attack:
+
+- **0°** – attached flow
+- **8°** – strong acceleration over the upper surface with mostly attached flow
+- **16°** – significant separation close to the maximum lift condition
+- **18°** – larger separated region and post-stall behaviour
+
+For comparison, the same velocity scale was used for the selected pathline visualizations.
+
+The transition from 16° to 18° is particularly relevant.
+
+Between these two conditions:
+
+`Cl: 1.5241 → 1.4175`
+
+while:
+
+`Cd: 0.0605 → 0.0961`
+
+The reduction in lift combined with the rapid increase in drag is consistent with the increasing flow separation observed over the upper surface.
+
+---
+
+## Main Results
+
+The main results obtained from the study are:
+
+- **Cl(0°) = 0.2174**
+- **Cd(0°) = 0.0100**
+- **Low-angle lift-curve slope ≈ 0.101 /deg**
+- **Maximum sampled Cl ≈ 1.52 at 16°**
+- **Maximum sampled Cl/Cd ≈ 52.3 at 8°**
+- Clear nonlinear behaviour at high angles of attack
+- Flow separation becomes significant close to the maximum-lift condition
+- At 18°, lift decreases while drag increases strongly, indicating post-stall behaviour
+
+The reported stall angle should be interpreted as the result of the present **2D steady RANS model, mesh, turbulence assumptions and sampled angles**, rather than as a universal value for the NACA 2412.
+
+---
+
+## Repository Structure
+
+```text
+NACA2412-CFD-Study/
+│
+├── README.md
+│
+├── report/
+│   └── NACA2412_CFD_Report.pdf
+│
+├── geometry/
+│   ├── generate_naca2412.py
+│   └── naca2412.txt
+│
+├── data/
+│   └── aerodynamic_coefficients.csv
+│
+├── postprocessing/
+│   └── plot_aerodynamic_results.py
+│
+└── figures/
+    ├── mesh.png
+    ├── cp_alpha0.png
+    ├── pathlines_alpha0.png
+    ├── pathlines_alpha8.png
+    ├── pathlines_alpha16.png
+    ├── pathlines_alpha18.png
+    ├── lift_curve.png
+    ├── drag_curve.png
+    ├── drag_polar.png
+    └── aerodynamic_efficiency.png
+```
+
+---
+
+## Limitations
+
+The analysis uses a two-dimensional steady RANS approach.
+
+The main limitations are therefore:
+
+- three-dimensional aerodynamic effects are not included
+- transition from laminar to turbulent flow is not explicitly modelled
+- the standard SST model assumes a fully turbulent treatment
+- steady RANS becomes less representative as the separated flow becomes increasingly unsteady near and beyond stall
+- the exact maximum-lift angle was not resolved with a very fine angle-of-attack increment
+
+Further work could include transient simulations near stall, transition modelling, additional mesh refinement and comparison with experimental data.
+
+---
+
+## Tools
+
+- **ANSYS Fluent** – CFD solver
+- **ANSYS Meshing / Discovery** – geometry and mesh preparation
+- **Python** – NACA geometry generation and aerodynamic post-processing
+- **NumPy**
+- **Pandas**
+- **Matplotlib**
+
+---
+
+## Author
+
+**Gabriele Mastropierro**  
+M.Sc. student in Aeronautical Engineering  
+University of Padua
